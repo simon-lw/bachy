@@ -2,13 +2,20 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import Bachyselector from '$lib/BachySelector.svelte';
 	import '../app.postcss';
-	import { AppShell, AppBar, initializeStores, Toast, getToastStore } from '@skeletonlabs/skeleton';
+	import { AppShell, AppBar, initializeStores, Toast, getToastStore, localStorageStore} from '@skeletonlabs/skeleton';
+	import {selectedStore, dataStore} from '$lib/DataStore' 
 
 	initializeStores();
 	const toastStore = getToastStore();
 
+	// const selectedStore = localStorageStore('selectedBachy', []);
+	// const removedStore = localStorageStore('lastRemovedBachy', []);
+	// const bachyStore = localStorageStore('bachyStore', JSON.parse("{\"name\":\"\"}"));
+
+	let titel =  $dataStore?.name ?? "Neues Backup";
+
 	async function saveClicked() {
-		let res = await invoke('save_command');
+		let res = await invoke('save_command', {$dataStore});
 
 		const toastString = {
 			message: res,
@@ -16,27 +23,21 @@
 		};
 
 		toastStore.trigger(toastString);
-
-		console.log(res);
 	}
 
 	async function loadClicked() {
-		let res = await invoke('load_command');
-
-		if (!res) {
-			console.log('did work');
-		} else {
-			console.log('did not work');
+		invoke('load_command')
+		.then((value)=>{
+			$dataStore = JSON.parse(value);
+		}).catch((err)=>{
 			const toastString = {
-				message: res,
+				message: err,
 				autohide: false
 			};
 			toastStore.trigger(toastString);
-		}
-
-		console.log('clicked');
+		});
 	}
-	let titel = 'Backup1';
+
 </script>
 
 <Toast />
@@ -68,7 +69,7 @@
 		</AppBar>
 	</svelte:fragment>
 	<svelte:fragment slot="sidebarLeft">
-		<Bachyselector on:add on:remove on:selectionChanged />
+		<Bachyselector on:add on:remove on:selectionChanged/>
 	</svelte:fragment>
 	<slot />
 </AppShell>
