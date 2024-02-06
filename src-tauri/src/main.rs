@@ -25,13 +25,13 @@ impl AppState {
 fn main() {
     tauri::Builder::default()
         .manage(AppState(Default::default()))
-        .invoke_handler(tauri::generate_handler![load_command, save_command])
+        .invoke_handler(tauri::generate_handler![load_command, save_command, get_default_command])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
 #[tauri::command]
-fn load_command(state: tauri::State<AppState>) -> Result<String,String> {
+fn load_command(state: tauri::State<AppState>) -> Result<String, String> {
     let dialog_result = FileDialogBuilder::new()
         .add_filter("bachys", &["bach"])
         .pick_file();
@@ -39,7 +39,8 @@ fn load_command(state: tauri::State<AppState>) -> Result<String,String> {
         None => Err("Could not open file".into()),
         Some(path) => {
             let file_contents = fs::read_to_string(path).map_err(|e| e.to_string())?;
-            let backup: BackupFile = serde_json::from_str(&file_contents).map_err(|e| e.to_string())?;
+            let backup: BackupFile =
+                serde_json::from_str(&file_contents).map_err(|e| e.to_string())?;
             state.0.lock().unwrap().backup_file = backup;
 
             Ok(file_contents)
@@ -48,11 +49,19 @@ fn load_command(state: tauri::State<AppState>) -> Result<String,String> {
 }
 
 #[tauri::command]
-fn save_command(backup_config : &str) -> Result<String,String> {
-    let backup = mock_backupfile();
+fn get_default_command() -> Result<String, String> {
+    let default_backup= BackupFile::default(); 
+    let backup_json= serde_json::to_string(&default_backup).map_err(|e| e.to_string())?;
+
+    Ok(backup_json)
+}
+
+#[tauri::command]
+fn save_command(config: &str) -> Result<String, String> {
+    // let backup = mock_backupfile();
     // check if data is parsable, else throw error
-    let _:BackupFile = serde_json:: from_str(backup_config).map_err(|e| e.to_string())?;
-    let serialized = serde_json::to_string(&backup).map_err(|e| e.to_string())?;
+    let _: BackupFile = serde_json::from_str(config).map_err(|e| e.to_string())?;
+    //  let serialized = serde_json::to_string(&backup).map_err(|e| e.to_string())?;
 
     let dialog_result = FileDialogBuilder::new()
         .add_filter("Bachys", &["bach"])
@@ -60,8 +69,13 @@ fn save_command(backup_config : &str) -> Result<String,String> {
     match dialog_result {
         None => Err("Did NOT save the file!".to_string()),
         Some(path) => {
-            let mut file = fs::OpenOptions::new().write(true).open(&path).map_err(|e| e.to_string())?;
-            file.write_all(serialized.as_bytes()).map_err(|e| e.to_string())?;
+            let mut file = fs::OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .open(&path)
+                .map_err(|e| e.to_string())?;
+            file.write_all(config.as_bytes())
+                .map_err(|e| e.to_string())?;
             Ok(format!("Saved to file \"{}\"", &path.as_path().display()))
         }
     }
@@ -102,7 +116,7 @@ fn mock_backupfile() -> BackupFile {
         ],
     };
 
-    let bachy_vec = vec![bachy1,bachy2];
+    let bachy_vec = vec![bachy1, bachy2];
 
     BackupFile {
         name: String::from("MeinBackup"),
@@ -137,7 +151,7 @@ struct BackupFile {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-struct FileInfo{
-    path: PathBuf, 
-    last_backup: String
+struct FileInfo {
+    path: PathBuf,
+    last_backup: String,
 }

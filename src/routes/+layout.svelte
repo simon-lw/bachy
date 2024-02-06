@@ -2,20 +2,28 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import Bachyselector from '$lib/BachySelector.svelte';
 	import '../app.postcss';
-	import { AppShell, AppBar, initializeStores, Toast, getToastStore, localStorageStore} from '@skeletonlabs/skeleton';
-	import {selectedStore, dataStore} from '$lib/DataStore' 
+	import {
+		AppShell,
+		AppBar,
+		initializeStores,
+		Toast,
+		Modal,
+		getToastStore,
+		getModalStore,
+
+	} from '@skeletonlabs/skeleton';
+	import { selectedStore, dataStore} from '$lib/DataStore';
 
 	initializeStores();
 	const toastStore = getToastStore();
+	const modalStore = getModalStore();
 
-	// const selectedStore = localStorageStore('selectedBachy', []);
-	// const removedStore = localStorageStore('lastRemovedBachy', []);
-	// const bachyStore = localStorageStore('bachyStore', JSON.parse("{\"name\":\"\"}"));
-
-	let titel =  $dataStore?.name ?? "Neues Backup";
+	let titel = $dataStore?.name ?? 'Neues Backup';
 
 	async function saveClicked() {
-		let res = await invoke('save_command', {$dataStore});
+		let config = JSON.stringify($dataStore);
+		console.log(config);
+		let res = await invoke('save_command', { config });
 
 		const toastString = {
 			message: res,
@@ -26,21 +34,47 @@
 	}
 
 	async function loadClicked() {
-		invoke('load_command')
-		.then((value)=>{
-			$dataStore = JSON.parse(value);
-		}).catch((err)=>{
-			const toastString = {
-				message: err,
-				autohide: false
-			};
-			toastStore.trigger(toastString);
-		});
-	}
+		let doLoad = () => {
+					invoke('load_command')
+			.then((value) => {
+				$dataStore = JSON.parse(value);
+			})
+			.catch((err) => {
+				const toastString = {
+					message: err,
+					autohide: false
+				};
+				toastStore.trigger(toastString);
+			});
+		}
 
+		// if ($hasChangedStore) {
+			/**
+			 *  @type {import('@skeletonlabs/skeleton').ModalSettings}
+			 */
+			const modal = {
+				type: 'confirm',
+				// Data
+				title: 'Please Confirm',
+				body: 'Are you sure you wish to proceed? All unsaved changes will be lost!',
+				// TRUE if confirm pressed, FALSE if cancel pressed
+				response: (/** @type {boolean} */ confired) => {
+					if(confired) {
+						doLoad();
+					} 
+				} 
+			};
+
+			modalStore.trigger(modal);
+		// }
+		// else {
+		// 	doLoad();
+		// }
+	}
 </script>
 
 <Toast />
+<Modal />
 
 <!-- App Shell -->
 <AppShell>
@@ -69,7 +103,7 @@
 		</AppBar>
 	</svelte:fragment>
 	<svelte:fragment slot="sidebarLeft">
-		<Bachyselector on:add on:remove on:selectionChanged/>
+		<Bachyselector on:add on:remove on:selectionChanged />
 	</svelte:fragment>
 	<slot />
 </AppShell>

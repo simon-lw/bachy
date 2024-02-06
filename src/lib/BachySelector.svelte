@@ -11,15 +11,19 @@
 	}
 
 	function addClicked() {
+		console.log($dataStore);
 		let ids = $dataStore?.bachys?.map((x) => x.id);
-		if (ids == null) {
+
+		if (!ids || ids.length <= 0) {
 			ids = [-1];
 		}
+
+		console.log(ids);
 
 		let id = Math.max(...ids) + 1;
 		$dataStore?.bachys?.push({
 			id: id,
-			name: 'Neuer Bachy',
+			name: 'Neues Backup',
 			icon: icons[id % icons.length],
 			target: '',
 			files: []
@@ -40,18 +44,18 @@
 </script>
 
 <section
-	class="flex flex-col flex-start w-full h-full text-token card px-4 space-y-4 overflow-auto w-48"
+	class="flex flex-col flex-start h-full text-token card px-4 space-y-4 overflow-auto w-48 resize-x"
 >
-	<div class="flex bg-inherit flex1 flex-row flex-start space-x-5 sticky top-0">
+	<div class="flex bg-inherit flex1 flex-row flex-start space-x-5 sticky top-0 max-h-16">
 		<button
 			on:click={() => addClicked()}
 			type="button"
-			class="btn-icon hover:variant-ghost-success text-xl min-w-0 flex-1 rounded-lg">➕</button
+			class="btn-icon variant-soft-success text-xl min-w-0 flex-1 rounded-lg">➕</button
 		>
 		<button
 			on:click={() => removeClicked()}
 			type="button"
-			class="btn-icon hover:variant-ghost-error text-xl min-w-0 flex-1 rounded-lg">❌</button
+			class="btn-icon variant-soft-error text-xl min-w-0 flex-1 rounded-lg">❌</button
 		>
 	</div>
 	<div class="flex-9 flex flex-col flex-start items-stretch content-stretch space-y-1 h-full">

@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store'
+import { invoke } from '@tauri-apps/api/tauri';
 
 /**
  * @typedef {Object} FileInfo
@@ -22,6 +23,8 @@ import { writable } from 'svelte/store'
  * @property {Bachy[]} bachys - The count property.
  */
 
+// export let hasChangedStore = writable(false);
+
 export let selectedStore = writable(-1);
 
 /**
@@ -39,3 +42,18 @@ export let defaultBachy = {
     "target": '',
     "files": []
 };
+
+// dataStore.subscribe((_)=>{
+//     hasChangedStore.set(true); 
+// });
+
+export async function getDefaultBackupFile() {
+    let defaultBackup = await invoke('get_default_command');
+
+    return JSON.parse(defaultBackup);
+}
+
+
+let newBackup = await getDefaultBackupFile();
+newBackup.name = 'My Backup';
+dataStore.set(newBackup);
