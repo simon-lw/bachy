@@ -53,6 +53,14 @@ export async function getDefaultBackupFile() {
     return JSON.parse(defaultBackup);
 }
 
+/**
+ * Create a new FileInfo
+ * @returns {FileInfo}
+ */
+export function newFileInfo() {
+    return { path: "", last_backup: "" }
+}
+
 
 let newBackup = await getDefaultBackupFile();
 newBackup.name = 'My Backup';

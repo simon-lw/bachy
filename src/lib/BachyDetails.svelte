@@ -1,28 +1,49 @@
 <script>
-	import { FileDropzone, Table } from '@skeletonlabs/skeleton';
-	import { tableMapperValues } from '@skeletonlabs/skeleton';
+	import { ProgressRadial, Table, getToastStore, tableMapperValues } from '@skeletonlabs/skeleton';
 	import { createEventDispatcher } from 'svelte';
-	import { selectedStore, dataStore, defaultBachy } from '$lib/DataStore';
+	import { selectedStore, dataStore, defaultBachy, newFileInfo } from '$lib/DataStore';
 	import { listen } from '@tauri-apps/api/event';
+	import { invoke } from '@tauri-apps/api/tauri';
+
+	const toastStore = getToastStore();
 
 	let fileHover = false;
+	let isCopying = false;
 
 	listen('tauri://file-drop', (event) => {
 		fileHover = false;
-		console.log(event);
+
+		if ($selectedStore < 0) {
+			return;
+		}
+
+		console.log(event.payload);
+
+		event?.payload?.forEach((/** @type {string} */ path) => {
+			let exists = currentBachy?.files?.findIndex((x) => x.path == path) != -1;
+
+			console.log('exists:' + exists);
+
+			if (!exists) {
+				let fileInfo = newFileInfo();
+				fileInfo.path = path;
+				currentBachy.files.push(fileInfo);
+			}
+		});
+
+		updateStore();
+		updateTableData();
 	});
 
 	listen('tauri://file-drop-hover', (event) => {
-		fileHover = true;
-		console.log(event);
+		if (event?.payload?.length > 0) {
+			fileHover = true;
+		}
 	});
 
-	listen('tauri://file-drop-cancelled', (event) => {
+	listen('tauri://file-drop-cancelled', (_) => {
 		fileHover = false;
-		console.log(event);
 	});
-
-	const dispatch = createEventDispatcher();
 
 	let currentBachy = defaultBachy;
 
@@ -56,8 +77,6 @@
 	});
 
 	function updateStore() {
-		console.log('update called');
-
 		let index = $dataStore?.bachys?.findIndex((x) => x.id == currentBachy.id) ?? -1;
 
 		if (index >= 0 && $dataStore != null) {
@@ -71,8 +90,36 @@
 		tableSimple = {
 			head: ['Path', 'Last Backup', 'Is Synced'],
 			body: tableMapperValues(currentBachy.files, ['path', 'lastBackup', 'isSynced']),
-			foot: ['Total', '']
+			foot: []
 		};
+	}
+
+	async function doBackup() {
+		isCopying = true;
+		let config = JSON.stringify(currentBachy);
+		console.log(config);
+		invoke('do_backup_command', { config })
+			.then((val) => {
+				console.log("val:");
+				console.log(val);
+				isCopying = false;
+
+				const toastString = {
+					message: 'Finished Copying',
+					autohide: false
+				};
+
+				toastStore.trigger(toastString);
+			})
+			.catch((err) => {
+				isCopying = false;
+				const toastString = {
+					message: err,
+					autohide: false
+				};
+
+				toastStore.trigger(toastString);
+			});
 	}
 </script>
 
@@ -80,7 +127,7 @@
 	<div class="absolute w-full h-full p-5 z-10 {fileHover && $selectedStore >= 0 ? '' : 'hidden'}">
 		<div
 			class="flex flex-col w-full h-full border border-4 border-surface-400 border-dashed
-			variant-glass-surface rounded-lg justify-center"
+			variant-glass-surface rounded-lg"
 		>
 			<div class="flex-1 flex justify-center items-center max-h-40">
 				<svg
@@ -145,13 +192,16 @@
 				/>
 			</label>
 			<button
-				on:click={() => {
-					dispatch('backupClicked', {});
-				}}
+				on:click={doBackup}
 				type="button"
 				class="flex-auto w-1 bg-gradient-to-br variant-gradient-tertiary-secondary disabled:variant-filled-secondary text-l rounded-lg hover:variant-ghost-primary active:variant-filled-primary"
-				disabled={$selectedStore < 0}>Backup</button
+				disabled={$selectedStore < 0 || isCopying}
 			>
+				<div class="flex flex-row content-center justify-center">
+					<span class="flex-1 {isCopying ? 'hidden' : ''}">Backup</span>
+					<ProgressRadial class="h-6 w-6 {isCopying ? '' : 'hidden'}" value={undefined} />
+				</div>
+			</button>
 		</div>
 	</div>
 </section>

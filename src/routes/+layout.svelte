@@ -9,10 +9,9 @@
 		Toast,
 		Modal,
 		getToastStore,
-		getModalStore,
-
+		getModalStore
 	} from '@skeletonlabs/skeleton';
-	import { selectedStore, dataStore} from '$lib/DataStore';
+	import { selectedStore, dataStore } from '$lib/DataStore';
 
 	initializeStores();
 	const toastStore = getToastStore();
@@ -35,51 +34,43 @@
 
 	async function loadClicked() {
 		let doLoad = () => {
-					invoke('load_command')
-			.then((value) => {
-				$dataStore = JSON.parse(value);
-			})
-			.catch((err) => {
-				const toastString = {
-					message: err,
-					autohide: false
-				};
-				toastStore.trigger(toastString);
-			});
-		}
+			invoke('load_command')
+				.then((value) => {
+					$dataStore = JSON.parse(value);
+					$selectedStore = -1;
+				})
+				.catch((err) => {
+					const toastString = {
+						message: err,
+						autohide: false
+					};
+					toastStore.trigger(toastString);
+				});
+		};
 
-		// if ($hasChangedStore) {
-			/**
-			 *  @type {import('@skeletonlabs/skeleton').ModalSettings}
-			 */
-			const modal = {
-				type: 'confirm',
-				// Data
-				title: 'Please Confirm',
-				body: 'Are you sure you wish to proceed? All unsaved changes will be lost!',
-				// TRUE if confirm pressed, FALSE if cancel pressed
-				response: (/** @type {boolean} */ confired) => {
-					if(confired) {
-						doLoad();
-					} 
-				} 
-			};
+		/**
+		 *  @type {import('@skeletonlabs/skeleton').ModalSettings}
+		 */
+		const modal = {
+			type: 'confirm',
+			title: 'Please Confirm',
+			body: 'Are you sure you wish to proceed? All unsaved changes will be lost!',
+			response: (/** @type {boolean} */ confired) => {
+				if (confired) {
+					doLoad();
+				}
+			}
+		};
 
-			modalStore.trigger(modal);
-		// }
-		// else {
-		// 	doLoad();
-		// }
+		modalStore.trigger(modal);
 	}
 </script>
 
 <Toast />
 <Modal />
 
-<!-- App Shell -->
 <AppShell>
 	<svelte:fragment slot="header">
-		<!-- App Bar -->
 		<AppBar>
 			<svelte:fragment slot="lead">
 				<strong class="text-xl uppercase">{titel}</strong>
