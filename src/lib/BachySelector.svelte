@@ -23,7 +23,7 @@
 		let id = Math.max(...ids) + 1;
 		$dataStore?.bachys?.push({
 			id: id,
-			name: 'Neues Backup',
+			name: 'New Bachy',
 			icon: icons[id % icons.length],
 			target: '',
 			files: []
