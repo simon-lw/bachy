@@ -19,7 +19,7 @@
     ·
     <a href="https://github.com/Infinite24/bachy/issues">Report Bug</a>
     ·
-    <a href="https://github.com/Infinite25/bachy/issues">Request Feature</a>
+    <a href="https://github.com/Infinite24/bachy/issues">Request Feature</a>
   </p>
 </div>
 
