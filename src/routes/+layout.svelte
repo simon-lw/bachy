@@ -17,16 +17,20 @@
 	const toastStore = getToastStore();
 	const modalStore = getModalStore();
 
-	let titel = $dataStore?.name ?? 'Neues Backup';
+	let title = $dataStore?.name ?? 'New Backup';
 
 	async function saveClicked() {
+		// save title
+		if ($dataStore) {
+			$dataStore.name = title;
+		}
+
 		let config = JSON.stringify($dataStore);
 		console.log(config);
 		let res = await invoke('save_command', { config });
 
 		const toastString = {
 			message: res,
-			autohide: false
 		};
 
 		toastStore.trigger(toastString);
@@ -36,13 +40,15 @@
 		let doLoad = () => {
 			invoke('load_command')
 				.then((value) => {
-					$dataStore = JSON.parse(value);
+
+					let parsed = JSON.parse(value);
+					$dataStore = parsed; 
 					$selectedStore = -1;
+					title = parsed.name;
 				})
 				.catch((err) => {
 					const toastString = {
 						message: err,
-						autohide: false
 					};
 					toastStore.trigger(toastString);
 				});
@@ -73,7 +79,19 @@
 	<svelte:fragment slot="header">
 		<AppBar>
 			<svelte:fragment slot="lead">
-				<strong class="text-xl uppercase">{titel}</strong>
+				<div class="flex flex-row space-x-4 items-center">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						fill="currentColor"
+						class="w-6 h-6 opacity-25"
+					>
+						<path
+							d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-12.15 12.15a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32L19.513 8.2Z"
+						/>
+					</svg>
+					<input type="text" class="bg-transparent border-0 text-xl h-full" bind:value={title} />
+				</div>
 			</svelte:fragment>
 			<svelte:fragment slot="trail">
 				<button

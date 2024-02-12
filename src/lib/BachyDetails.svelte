@@ -106,7 +106,6 @@
 
 				const toastString = {
 					message: 'Finished Copying',
-					autohide: false
 				};
 
 				toastStore.trigger(toastString);
@@ -115,7 +114,6 @@
 				isCopying = false;
 				const toastString = {
 					message: err,
-					autohide: false
 				};
 
 				toastStore.trigger(toastString);

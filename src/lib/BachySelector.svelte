@@ -50,13 +50,39 @@
 		<button
 			on:click={() => addClicked()}
 			type="button"
-			class="btn-icon variant-soft-success text-xl min-w-0 flex-1 rounded-lg">➕</button
+			class="btn-icon variant-soft-success text-xl min-w-0 flex-1 rounded-lg"
 		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 24 24"
+				fill="currentColor"
+				class="w-6 h-6"
+			>
+				<path
+					fill-rule="evenodd"
+					d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
+					clip-rule="evenodd"
+				/>
+			</svg>
+		</button>
 		<button
 			on:click={() => removeClicked()}
 			type="button"
-			class="btn-icon variant-soft-error text-xl min-w-0 flex-1 rounded-lg">❌</button
+			class="btn-icon variant-soft-error text-xl min-w-0 flex-1 rounded-lg"
 		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 24 24"
+				fill="currentColor"
+				class="w-6 h-6"
+			>
+				<path
+					fill-rule="evenodd"
+					d="M4.25 12a.75.75 0 0 1 .75-.75h14a.75.75 0 0 1 0 1.5H5a.75.75 0 0 1-.75-.75Z"
+					clip-rule="evenodd"
+				/>
+			</svg>
+		</button>
 	</div>
 	<div class="flex-9 flex flex-col flex-start items-stretch content-stretch space-y-1 h-full">
 		{#if $dataStore?.bachys != null}

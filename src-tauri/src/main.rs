@@ -44,7 +44,7 @@ fn load_command(state: tauri::State<AppState>) -> Result<String, String> {
         None => Err("Could not open file".into()),
         Some(path) => {
             let file_contents = fs::read_to_string(path).map_err(|e| e.to_string())?;
-            let backup: BackupFile =
+            let mut backup: BackupFile =
                 serde_json::from_str(&file_contents).map_err(|e| e.to_string())?;
             state.0.lock().unwrap().backup_file = backup;
 
@@ -63,13 +63,11 @@ fn get_default_command() -> Result<String, String> {
 
 #[tauri::command]
 fn save_command(config: &str) -> Result<String, String> {
-    // let backup = mock_backupfile();
-    // check if data is parsable, else throw error
-    let _: BackupFile = serde_json::from_str(config).map_err(|e| e.to_string())?;
-    //  let serialized = serde_json::to_string(&backup).map_err(|e| e.to_string())?;
+    let bachupfile : BackupFile = serde_json::from_str(config).map_err(|e| e.to_string())?;
 
     let dialog_result = FileDialogBuilder::new()
         .add_filter("Bachys", &["bach"])
+        .set_file_name(&bachupfile.name)
         .save_file();
     match dialog_result {
         None => Err("Did NOT save the file!".to_string()),
