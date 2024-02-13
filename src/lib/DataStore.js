@@ -43,10 +43,6 @@ export let defaultBachy = {
     "files": []
 };
 
-// dataStore.subscribe((_)=>{
-//     hasChangedStore.set(true); 
-// });
-
 export async function getDefaultBackupFile() {
     let defaultBackup = await invoke('get_default_command');
 

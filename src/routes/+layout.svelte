@@ -26,29 +26,35 @@
 		}
 
 		let config = JSON.stringify($dataStore);
-		console.log(config);
-		let res = await invoke('save_command', { config });
+		invoke('save_command', { config })
+			.then((value) => {
+				const toastString = {
+					message: value
+				};
 
-		const toastString = {
-			message: res,
-		};
+				toastStore.trigger(toastString);
+			})
+			.catch((err) => { 
+				const toastString = {
+					message: "Could not save the configuration: " + err 
+				};
 
-		toastStore.trigger(toastString);
+				toastStore.trigger(toastString);
+			});
 	}
 
 	async function loadClicked() {
 		let doLoad = () => {
 			invoke('load_command')
 				.then((value) => {
-
 					let parsed = JSON.parse(value);
-					$dataStore = parsed; 
+					$dataStore = parsed;
 					$selectedStore = -1;
 					title = parsed.name;
 				})
 				.catch((err) => {
 					const toastString = {
-						message: err,
+						message: err
 					};
 					toastStore.trigger(toastString);
 				});

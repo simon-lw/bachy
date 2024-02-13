@@ -83,25 +83,27 @@
 			$dataStore.bachys[index].name = currentBachy.name;
 			$dataStore.bachys[index].icon = currentBachy.icon;
 			$dataStore.bachys[index].target = currentBachy.target;
+			$dataStore.bachys[index].files = currentBachy.files;
 		}
 	}
 
 	function updateTableData() {
+		let tableBachy = currentBachy.files.map((file /** @type {FileInfo}*/)=>{
+			let date = file.last_backup ? new Date(+file.last_backup * 1000).toLocaleString() : '-';
+			return {path:file.path,last_backup:date}
+		})
 		tableSimple = {
-			head: ['Path', 'Last Backup', 'Is Synced'],
-			body: tableMapperValues(currentBachy.files, ['path', 'lastBackup', 'isSynced']),
+			head: ['Path', 'Last Backup' ],
+			body: tableMapperValues(tableBachy, ['path', 'last_backup']),
 			foot: []
 		};
 	}
 
 	async function doBackup() {
 		isCopying = true;
-		let config = JSON.stringify(currentBachy);
-		console.log(config);
-		invoke('do_backup_command', { config })
+		let bachy = JSON.stringify(currentBachy);
+		invoke('do_backup_command', { config: bachy })
 			.then((val) => {
-				console.log("val:");
-				console.log(val);
 				isCopying = false;
 
 				const toastString = {
@@ -109,6 +111,12 @@
 				};
 
 				toastStore.trigger(toastString);
+
+				// update bachy
+				currentBachy = JSON.parse(val);
+
+				updateStore();
+				updateTableData();
 			})
 			.catch((err) => {
 				isCopying = false;

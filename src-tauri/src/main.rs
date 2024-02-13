@@ -2,11 +2,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{self, Deserialize, Serialize};
+use core::fmt;
 use std::{
-    fs::{self, File},
+    fs::{self, File, FileTimes, Metadata},
     io::{self, Write},
     path::{Path, PathBuf},
-    sync::Mutex,
+    sync::Mutex, time::SystemTime,
 };
 use tauri::api::dialog::blocking::FileDialogBuilder;
 
@@ -44,7 +45,7 @@ fn load_command(state: tauri::State<AppState>) -> Result<String, String> {
         None => Err("Could not open file".into()),
         Some(path) => {
             let file_contents = fs::read_to_string(path).map_err(|e| e.to_string())?;
-            let mut backup: BackupFile =
+            let backup: BackupFile =
                 serde_json::from_str(&file_contents).map_err(|e| e.to_string())?;
             state.0.lock().unwrap().backup_file = backup;
 
@@ -72,29 +73,27 @@ fn save_command(config: &str) -> Result<String, String> {
     match dialog_result {
         None => Err("Did NOT save the file!".to_string()),
         Some(path) => {
-            let mut file = fs::OpenOptions::new()
-                .write(true)
-                .truncate(true)
-                .create_new(true)
-                .open(&path)
+            let mut file = fs::File::create(&path)
                 .map_err(|e| e.to_string())?;
+
             file.write_all(config.as_bytes())
                 .map_err(|e| e.to_string())?;
             Ok(format!("Saved to file \"{}\"", &path.as_path().display()))
+
         }
     }
 }
 
 #[tauri::command]
 fn do_backup_command(config: &str) -> Result<String, String> {
-    let bachy: Bachy = serde_json::from_str(config).map_err(|e| e.to_string())?;
-    let target = bachy.target;
+    let mut bachy: Bachy = serde_json::from_str(config).map_err(|e| e.to_string())?;
+    let target = &bachy.target;
 
     if !target.exists() {
         return Err(format!("The target:{} does not exist!", target.display()));
     }
 
-    for file_info in bachy.files {
+    for file_info in &mut bachy.files {
         if file_info.path.is_file() {
             let rel_name = PathBuf::from(
                 file_info
@@ -108,7 +107,9 @@ fn do_backup_command(config: &str) -> Result<String, String> {
             );
 
             let file_target = target.join(rel_name);
-            fs::copy(file_info.path, file_target).map_err(|e| e.to_string())?;
+            fs::copy(&file_info.path, file_target).map_err(|e| e.to_string())?;
+
+            file_info.last_backup = chrono::Local::now().timestamp().to_string();
         } else {
             let mut prefix = file_info.path.clone();
 
@@ -138,10 +139,12 @@ fn do_backup_command(config: &str) -> Result<String, String> {
                 let file_target = target.join(rel_name);
                 fs::copy(f, file_target).map_err(|e| e.to_string())?;
             }
+
+            file_info.last_backup = chrono::Local::now().timestamp().to_string();
         }
     }
 
-    Ok("".into())
+    serde_json::to_string(&bachy).map_err(|e| e.to_string())
 }
 
 
