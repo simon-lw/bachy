@@ -45,7 +45,6 @@ export let defaultBachy = {
 
 export async function getDefaultBackupFile() {
     let defaultBackup = await invoke('get_default_command');
-
     return JSON.parse(defaultBackup);
 }
 
@@ -57,7 +56,14 @@ export function newFileInfo() {
     return { path: "", last_backup: "" }
 }
 
-
-let newBackup = await getDefaultBackupFile();
-newBackup.name = 'My Backup';
-dataStore.set(newBackup);
+// setup datastore
+let newBackup;
+getDefaultBackupFile().then(
+    (val) => {
+        newBackup = val;
+        newBackup.name = 'My Backup';
+        dataStore.set(newBackup);
+    }
+).catch(
+    (err) => console.log(err)
+);

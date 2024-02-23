@@ -2,12 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{self, Deserialize, Serialize};
-use core::fmt;
 use std::{
-    fs::{self, File, FileTimes, Metadata},
+    fs::{self},
     io::{self, Write},
     path::{Path, PathBuf},
-    sync::Mutex, time::SystemTime,
+    sync::Mutex,
 };
 use tauri::api::dialog::blocking::FileDialogBuilder;
 
@@ -37,10 +36,13 @@ fn main() {
 }
 
 #[tauri::command]
-fn load_command(state: tauri::State<AppState>) -> Result<String, String> {
+async fn load_command(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    println!("Called load");
     let dialog_result = FileDialogBuilder::new()
+        .set_directory(".")
         .add_filter("bachys", &["bach"])
         .pick_file();
+    
     match dialog_result {
         None => Err("Could not open file".into()),
         Some(path) => {
@@ -63,23 +65,22 @@ fn get_default_command() -> Result<String, String> {
 }
 
 #[tauri::command]
-fn save_command(config: &str) -> Result<String, String> {
-    let bachupfile : BackupFile = serde_json::from_str(config).map_err(|e| e.to_string())?;
+async fn save_command(config: &str) -> Result<String, String> {
+    let bachupfile: BackupFile = serde_json::from_str(config).map_err(|e| e.to_string())?;
 
     let dialog_result = FileDialogBuilder::new()
+        .set_directory(".")
         .add_filter("Bachys", &["bach"])
         .set_file_name(&bachupfile.name)
         .save_file();
     match dialog_result {
         None => Err("Did NOT save the file!".to_string()),
         Some(path) => {
-            let mut file = fs::File::create(&path)
-                .map_err(|e| e.to_string())?;
+            let mut file = fs::File::create(&path).map_err(|e| e.to_string())?;
 
             file.write_all(config.as_bytes())
                 .map_err(|e| e.to_string())?;
             Ok(format!("Saved to file \"{}\"", &path.as_path().display()))
-
         }
     }
 }
@@ -127,8 +128,8 @@ fn do_backup_command(config: &str) -> Result<String, String> {
             for folder in &folders {
                 let rel_target = folder.strip_prefix(&prefix).map_err(|e| e.to_string())?;
                 let folder_target = target.join(rel_target);
-                
-                if !folder_target.exists() { 
+
+                if !folder_target.exists() {
                     fs::create_dir(folder_target).map_err(|e| e.to_string())?;
                 }
             }
@@ -146,7 +147,6 @@ fn do_backup_command(config: &str) -> Result<String, String> {
 
     serde_json::to_string(&bachy).map_err(|e| e.to_string())
 }
-
 
 /// Finds all files and folders within a folder.
 /// If a folder is passed in, the folder is also added to the list of dirs
@@ -185,19 +185,19 @@ fn find_files_to_copy(source: &Path) -> Result<(Vec<PathBuf>, Vec<PathBuf>), io:
 }
 
 /// Copies all files in [files] relative to target
-fn copy_if_new(files: Vec<PathBuf>, target: PathBuf, source: PathBuf) {
-    for file in files {
-        let rel_target = file.strip_prefix(&source).unwrap();
-        let target = target.join(rel_target);
+// fn copy_if_new(files: Vec<PathBuf>, target: PathBuf, source: PathBuf) {
+//     for file in files {
+//         let rel_target = file.strip_prefix(&source).unwrap();
+//         let target = target.join(rel_target);
 
-        let target_time = target.metadata().unwrap().modified().unwrap();
-        let source_time = file.metadata().unwrap().modified().unwrap();
+//         let target_time = target.metadata().unwrap().modified().unwrap();
+//         let source_time = file.metadata().unwrap().modified().unwrap();
 
-        if target_time < source_time {
-            fs::copy(file, target);
-        }
-    }
-}
+//         if target_time < source_time {
+//             fs::copy(file, target);
+//         }
+//     }
+// }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 struct Bachy {
